@@ -20,6 +20,7 @@ spec:
 
   storage:
     size: 10Gi
+    storageClass: gp3
 
   resources:
     requests:
