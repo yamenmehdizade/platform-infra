@@ -1,6 +1,6 @@
 clusterName: platform-dev
 region: eu-central-1
-
+vpcId: vpc-072eca153556ce0bc
 serviceAccount:
   create: true
   name: aws-load-balancer-controller
