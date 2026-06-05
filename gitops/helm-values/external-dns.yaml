@@ -1,0 +1,19 @@
+provider: aws
+region: eu-central-1
+
+serviceAccount:
+  create: true
+  name: external-dns
+  annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::028185488284:role/platform-dev-external-dns
+
+policy: sync
+txtOwnerId: platform-dev
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
