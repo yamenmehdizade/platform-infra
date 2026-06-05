@@ -16,7 +16,7 @@ spec:
         - $values/gitops/helm-values/cert-manager.yaml
   sources:
     - repoURL: https://github.com/yamenmehdizade/platform-infra
-      targetRevision: main
+      targetRevision: master
       ref: values
     - repoURL: https://charts.jetstack.io
       chart: cert-manager

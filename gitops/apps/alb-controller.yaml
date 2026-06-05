@@ -16,7 +16,7 @@ spec:
         - $values/gitops/helm-values/alb-controller.yaml
   sources:
     - repoURL: https://github.com/yamenmehdizade/platform-infra
-      targetRevision: main
+      targetRevision: master
       ref: values
     - repoURL: https://aws.github.io/eks-charts
       chart: aws-load-balancer-controller

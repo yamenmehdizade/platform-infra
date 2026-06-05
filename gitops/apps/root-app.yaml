@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/yamenmehdizade/platform-infra
-    targetRevision: main
+    targetRevision: master
     path: gitops/apps
   destination:
     server: https://kubernetes.default.svc
