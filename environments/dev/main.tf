@@ -70,3 +70,13 @@ module "argocd" {
   depends_on = [module.eks]
 
 }
+
+module "security" {
+  source = "../../modules/security"
+
+  project_name = "platform"
+  environment  = "dev"
+}
+
+
+

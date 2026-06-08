@@ -29,3 +29,11 @@ output "cert_manager_role_arn" {
 output "external_dns_role_arn" {
   value = module.irsa.external_dns_role_arn
 }
+
+output "waf_web_acl_arn" {
+  value = module.security.waf_web_acl_arn
+}
+
+output "guardduty_detector_id" {
+  value = module.security.guardduty_detector_id
+}
