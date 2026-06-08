@@ -52,6 +52,8 @@ module "eks" {
   desired_size = 2
   min_size     = 1
   max_size     = 3
+  
+  ebs_csi_role_arn = module.irsa.ebs_csi_role_arn
 }
 
 module "irsa" {
@@ -66,4 +68,5 @@ module "argocd" {
   source = "../../modules/argocd"
 
   depends_on = [module.eks]
+
 }

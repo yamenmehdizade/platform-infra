@@ -113,11 +113,11 @@ resource "aws_iam_openid_connect_provider" "eks" {
   url = aws_eks_cluster.this.identity[0].oidc[0].issuer
 }
 
-
 resource "aws_eks_addon" "ebs_csi_driver" {
   cluster_name             = aws_eks_cluster.this.name
   addon_name               = "aws-ebs-csi-driver"
   addon_version            = "v1.40.0-eksbuild.1"
+  service_account_role_arn = var.ebs_csi_role_arn
   resolve_conflicts_on_create = "OVERWRITE"
 }
 
