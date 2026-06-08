@@ -49,9 +49,9 @@ module "eks" {
 
   node_instance_types = ["t3.medium"]
 
-  desired_size = 2
+  desired_size = 3
   min_size     = 1
-  max_size     = 3
+  max_size     = 4
   
   ebs_csi_role_arn = module.irsa.ebs_csi_role_arn
 }

@@ -11,7 +11,7 @@ loki:
       memory: 256Mi
 
 promtail:
-  enabled: true
+  enabled: false
   resources:
     requests:
       cpu: 50m
