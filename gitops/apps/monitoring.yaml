@@ -11,12 +11,12 @@ spec:
     - repoURL: https://github.com/yamenmehdizade/platform-infra
       targetRevision: master
       ref: values
-    - repoURL: https://prometheus-community.github.io/helm-charts
-      chart: kube-prometheus-stack
-      targetRevision: 72.6.2
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: grafana
+      targetRevision: 8.10.4
       helm:
         valueFiles:
-          - $values/gitops/helm-values/monitoring.yaml
+          - $values/gitops/helm-values/grafana.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -26,4 +26,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
