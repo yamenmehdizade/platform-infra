@@ -1,0 +1,18 @@
+replicaCount: 2
+
+image:
+  repository: 028185488284.dkr.ecr.eu-central-1.amazonaws.com/platform-dev
+  tag: frontend-v1.0.0
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
