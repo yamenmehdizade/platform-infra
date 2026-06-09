@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Build and Push"]
+    types: [completed]
+    branches: [master]
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+  deploy:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name platform-dev \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.21.0
+
+      - name: Deploy Backend
+        run: |
+          helm upgrade --install backend ./helm/backend \
+            --namespace backend \
+            --create-namespace \
+            --set image.tag=backend-${{ github.event.workflow_run.head_sha }} \
+            --wait \
+            --timeout 5m
+
+      - name: Deploy Frontend
+        run: |
+          helm upgrade --install frontend ./helm/frontend \
+            --namespace frontend \
+            --create-namespace \
+            --set image.tag=frontend-${{ github.event.workflow_run.head_sha }} \
+            --wait \
+            --timeout 5m
+
+      - name: Smoke Test
+        run: |
+          kubectl port-forward svc/backend 8080:8080 -n backend &
+          sleep 5
+          curl -f http://localhost:8080/health || exit 1
+          echo "Smoke test passed!"
+
+

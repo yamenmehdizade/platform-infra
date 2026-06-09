@@ -37,3 +37,11 @@ output "waf_web_acl_arn" {
 output "guardduty_detector_id" {
   value = module.security.guardduty_detector_id
 }
+
+
+output "github_actions_role_arn" {
+  value = module.irsa.github_actions_role_arn
+}
+
+
+
