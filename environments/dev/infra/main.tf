@@ -47,6 +47,7 @@ module "eks" {
   min_size            = 1
   max_size            = 4
   ebs_csi_role_arn    = module.irsa.ebs_csi_role_arn
+  github_actions_role_arn = module.irsa.github_actions_role_arn
 }
 
 module "security" {
