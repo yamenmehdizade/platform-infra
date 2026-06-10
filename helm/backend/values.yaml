@@ -13,11 +13,6 @@ env:
   CLUSTER_NAME: platform-dev
   AWS_REGION: eu-central-1
   ENVIRONMENT: dev
-  DB_HOST: platform-db-rw.postgres.svc.cluster.local
-  DB_PORT: "5432"
-  DB_NAME: platform
-  DB_USER: platform
-  DB_PASSWORD: changeme123
 
 resources:
   requests:

@@ -249,7 +249,7 @@ resource "aws_iam_policy" "external_secrets" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = "arn:aws:secretsmanager:eu-central-1:*:secret:${var.cluster_name}/*"
+        Resource = "arn:aws:secretsmanager:eu-central-1:028185488284:secret:platform/*"
       }
     ]
   })
