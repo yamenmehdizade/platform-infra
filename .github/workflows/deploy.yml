@@ -13,7 +13,7 @@ jobs:
   deploy:
     name: Deploy to Dev
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       id-token: write
       contents: read
@@ -44,7 +44,7 @@ jobs:
           helm upgrade --install backend ./helm/backend \
             --namespace backend \
             --create-namespace \
-            --set image.tag=backend-${{ github.event.workflow_run.head_sha }} \
+            --set image.tag=backend-${{ github.event.workflow_run.head_sha || github.sha }} \
             --wait \
             --timeout 5m
 
@@ -53,11 +53,11 @@ jobs:
           helm upgrade --install frontend ./helm/frontend \
             --namespace frontend \
             --create-namespace \
-            --set image.tag=frontend-${{ github.event.workflow_run.head_sha }} \
+            --set image.tag=frontend-${{ github.event.workflow_run.head_sha || github.sha }} \
             --wait \
             --timeout 5m
 
-       - name: Smoke Test
+      - name: Smoke Test
         run: |
           POD=$(kubectl get pod -n backend -l app=backend -o jsonpath='{.items[0].metadata.name}')
           kubectl exec -n backend $POD -- wget -qO- http://localhost:8080/health
