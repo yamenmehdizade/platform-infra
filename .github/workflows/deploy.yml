@@ -57,11 +57,14 @@ jobs:
             --wait \
             --timeout 5m
 
+
       - name: Smoke Test
         run: |
           kubectl port-forward svc/backend 8080:8080 -n backend &
-          sleep 5
-          curl -f http://localhost:8080/health || exit 1
+          PF_PID=$!
+          sleep 10
+          curl -f http://localhost:8080/health || (kill $PF_PID; exit 1)
+          kill $PF_PID
           echo "Smoke test passed!"
 
 
