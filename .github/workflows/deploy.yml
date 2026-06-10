@@ -4,7 +4,6 @@ on:
   workflow_run:
     workflows: ["Build and Push"]
     types: [completed]
-    branches: [master]
 
 env:
   AWS_REGION: eu-central-1
