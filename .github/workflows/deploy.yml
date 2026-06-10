@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: ["Build and Push"]
     types: [completed]
+  workflow_dispatch:
 
 env:
   AWS_REGION: eu-central-1
