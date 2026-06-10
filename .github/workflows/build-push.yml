@@ -87,3 +87,58 @@ jobs:
             $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${{ github.sha }}
 
 
+
+    deploy:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name platform-dev \
+            --region eu-central-1
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.21.0
+
+      - name: Deploy Backend
+        run: |
+          helm upgrade --install backend ./helm/backend \
+            --namespace backend \
+            --create-namespace \
+            --set image.tag=backend-${{ github.sha }} \
+            --wait \
+            --timeout 5m
+
+      - name: Deploy Frontend
+        run: |
+          helm upgrade --install frontend ./helm/frontend \
+            --namespace frontend \
+            --create-namespace \
+            --set image.tag=frontend-${{ github.sha }} \
+            --wait \
+            --timeout 5m
+
+      - name: Smoke Test
+        run: |
+          POD=$(kubectl get pod -n backend -l app=backend -o jsonpath='{.items[0].metadata.name}')
+          kubectl exec -n backend $POD -- wget -qO- http://localhost:8080/health
+          echo "Smoke test passed!"
+
+
