@@ -49,3 +49,17 @@ output "waf_web_acl_arn" {
 output "guardduty_detector_id" {
   value = module.security.guardduty_detector_id
 }
+
+output "db_secret_arn" {
+  value = module.secrets.db_secret_arn
+}
+
+output "db_secret_name" {
+  value = module.secrets.db_secret_name
+}
+
+output "external_secrets_role_arn" {
+  value = module.irsa.external_secrets_role_arn
+}
+
+

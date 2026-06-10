@@ -55,3 +55,15 @@ module "security" {
   project_name = "platform"
   environment  = "dev"
 }
+
+module "secrets" {
+  source       = "../../../modules/secrets"
+  project_name = "platform"
+  environment  = "dev"
+  db_username  = "platform"
+  db_password  = "changeme123"
+}
+
+
+
+
