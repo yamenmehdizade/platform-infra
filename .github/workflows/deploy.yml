@@ -57,14 +57,8 @@ jobs:
             --wait \
             --timeout 5m
 
-
-      - name: Smoke Test
+       - name: Smoke Test
         run: |
-          kubectl port-forward svc/backend 8080:8080 -n backend &
-          PF_PID=$!
-          sleep 10
-          curl -f http://localhost:8080/health || (kill $PF_PID; exit 1)
-          kill $PF_PID
+          POD=$(kubectl get pod -n backend -l app=backend -o jsonpath='{.items[0].metadata.name}')
+          kubectl exec -n backend $POD -- wget -qO- http://localhost:8080/health
           echo "Smoke test passed!"
-
-
