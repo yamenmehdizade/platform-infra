@@ -92,8 +92,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: eu-central-1
-
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
