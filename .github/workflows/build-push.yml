@@ -97,7 +97,7 @@ jobs:
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
-            --name platform-dev \
+            --name platform-stage \
             --region eu-central-1
 
       - name: Setup Helm
