@@ -58,8 +58,3 @@ app.get('/api/nodes', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-# trigger
-# fix smoke
-# trigger deploy
-# manual trigger test
-# final test
