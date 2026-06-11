@@ -1,11 +1,91 @@
-deploy:
-    name: Deploy to Dev/Stage
+name: Build and Push
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/backend/**'
+      - 'apps/frontend/**'
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REGISTRY: 028185488284.dkr.ecr.eu-central-1.amazonaws.com
+  ECR_REPOSITORY: platform-dev
+
+jobs:
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-${{ github.sha }} \
+            apps/backend/
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }}
+          severity: CRITICAL
+          exit-code: 1
+
+      - name: Push to ECR
+        run: |
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:backend-${{ github.sha }}
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Frontend
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${{ github.sha }} \
+            apps/frontend/
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${{ github.sha }}
+
+  deploy:
+    name: Deploy to Stage
     runs-on: ubuntu-latest
     needs: [build-backend, build-frontend]
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,9 +100,7 @@ deploy:
       - name: Set cluster name
         id: cluster
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-            echo "name=platform-stage" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+          if [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
             echo "name=platform-prod" >> $GITHUB_OUTPUT
           else
             echo "name=platform-stage" >> $GITHUB_OUTPUT
