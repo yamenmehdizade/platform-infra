@@ -161,6 +161,10 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
   }
 
   force = true
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
 }
 
 

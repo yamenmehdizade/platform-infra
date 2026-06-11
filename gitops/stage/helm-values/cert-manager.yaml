@@ -1,0 +1,17 @@
+installCRDs: true
+
+serviceAccount:
+  create: true
+  name: cert-manager
+  annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::028185488284:role/platform-stage-cert-manager
+
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
