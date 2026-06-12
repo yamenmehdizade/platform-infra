@@ -12,9 +12,11 @@ spec:
     chart: netdata
     targetRevision: 3.7.80
     helm:
-      values: |
+       values: |
         replicaCount: 1
         persistence:
+          enabled: false
+        sd:
           enabled: false
         resources:
           requests:
@@ -22,7 +24,7 @@ spec:
             memory: 256Mi
           limits:
             cpu: 500m
-            memory: 512Mi
+            memory: 512Mi     
   destination:
     server: https://kubernetes.default.svc
     namespace: netdata
