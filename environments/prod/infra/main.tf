@@ -42,8 +42,8 @@ module "eks" {
   cluster_name            = "platform-prod"
   kubernetes_version      = "1.33"
   private_subnet_ids      = module.vpc.private_app_subnet_ids
-  node_instance_types     = ["m5.xlarge"]
-  desired_size            = 3
+  node_instance_types     = ["t3.large"]
+  desired_size            = 2
   min_size                = 2
   max_size                = 10
   ebs_csi_role_arn        = module.irsa.ebs_csi_role_arn

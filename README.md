@@ -1,139 +1,319 @@
 # Platform Infrastructure
 
+[![CI](https://github.com/yamenmehdizade/platform-infra/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/yamenmehdizade/platform-infra/actions)
+[![Build](https://github.com/yamenmehdizade/platform-infra/actions/workflows/build-push.yml/badge.svg)](https://github.com/yamenmehdizade/platform-infra/actions)
 ![Terraform](https://img.shields.io/badge/Terraform-1.7+-purple)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-1.33-blue)
-![ArgoCD](https://img.shields.io/badge/ArgoCD-GitOps-orange)
+![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-orange)
 ![AWS](https://img.shields.io/badge/AWS-eu--central--1-yellow)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-Production-grade AWS infrastructure built with Terraform and GitOps principles.
-Designed to demonstrate Cloud/DevOps engineering skills for Swiss and Austrian markets.
+> Production-grade AWS infrastructure built with Terraform, Kubernetes, and GitOps principles.
+> Designed by a Network Security Engineer transitioning to Cloud/DevOps — targeting Swiss and Austrian markets.
 
 ---
 
-## Architectur
+## Overview
 
+This project demonstrates a complete, real-world cloud infrastructure deployment across **3 isolated environments** (dev, stage, prod). It is not a tutorial project — every component reflects patterns used in production environments at Swiss and Austrian enterprises.
+
+**What makes this different:**
+- 10+ years of network security experience applied to cloud architecture
+- Every design decision is documented with rationale
+- Real errors encountered, real fixes applied — all documented
+- Security is a first-class concern, not an afterthought
+
+---
+
+## Architecture
+
+Internet → WAF (OWASP rules + rate limiting)
+
+→ ALB (TLS termination)
+
+→ EKS Kubernetes 1.33
+
+├── Frontend (nginx)
+
+├── Backend API (Node.js)
+
+├── PostgreSQL 17 (CloudNativePG)
+
+├── Prometheus + Grafana + Loki
+
+└── ArgoCD (GitOps controller)
+
+### Multi-Environment Design
+
+| Environment | VPC CIDR | Node Type | Node Count | NAT GWs |
+|-------------|----------|-----------|------------|---------|
+| dev | 10.0.0.0/16 | t3.medium | 2-3 | 1 |
+| stage | 10.1.0.0/16 | t3.large | 2 | 2 |
+| prod | 10.2.0.0/16 | m5.xlarge | 3 | 3 |
+
+Each environment has its own:
+- Isolated VPC with 3-tier subnet design
+- EKS cluster with dedicated node groups
+- Terraform state file (S3 + DynamoDB lock)
+- Secrets Manager secrets
+- ArgoCD instance
+- WAF WebACL and GuardDuty detector
+
+---
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Cloud | AWS (eu-central-1) |
-| IaC | Terraform >= 1.7, modular, multi-environment |
-| Container Platform | EKS 1.33, Kubernetes |
-| GitOps | ArgoCD (App of Apps pattern) |
-| CI/CD | GitHub Actions (planned) |
-| Observability | Prometheus, Grafana, Loki, AlertManager |
-| Security | WAF, GuardDuty, Security Hub, Trivy Operator |
-| Database | PostgreSQL 17 (CloudNativePG) |
-| DNS/TLS | ExternalDNS, cert-manager |
+| Layer | Technology | Details |
+|-------|-----------|---------|
+| Cloud | AWS eu-central-1 | Frankfurt region |
+| IaC | Terraform >= 1.7 | Modular, multi-environment, remote state |
+| Container Platform | EKS 1.33 | Managed node groups, IRSA, EBS CSI |
+| GitOps | ArgoCD | App of Apps pattern, selfHeal, automated sync |
+| CI/CD | GitHub Actions | OIDC auth, Trivy gate, Helm deploy |
+| Observability | Prometheus + Grafana + Loki | Pre-provisioned dashboards |
+| Security | WAF + GuardDuty + Security Hub + Trivy | CIS Benchmark, OWASP rules |
+| Database | PostgreSQL 17 | CloudNativePG operator, EBS persistence |
+| Secrets | AWS Secrets Manager + ESO | Automatic sync, no secrets in Git |
+| DNS/TLS | ExternalDNS + cert-manager | Route53 integration |
+
+---
 
 ## Repository Structure
 
-## Infrastructure Components
+platform-infra/
 
-### Networking
-- VPC: 10.0.0.0/16 across 3 Availability Zones
-- Public subnets: ALB, NAT Gateway
-- Private App subnets: EKS worker nodes
-- Private DB subnets: PostgreSQL, ElastiCache
-- NAT Gateway for outbound internet access
-- VPC Flow Logs enabled
+├── terraform/
 
-### EKS Cluster
-- Kubernetes 1.33 (latest)
-- Managed node groups: t3.medium
-- OIDC provider for IRSA
-- EBS CSI Driver, VPC CNI with prefix delegation
-- Add-ons: CoreDNS, kube-proxy, aws-node
+│   ├── modules/               # Reusable modules
 
-### GitOps (ArgoCD)
-App of Apps pattern — single root-app manages all applications:
-- AWS Load Balancer Controller
-- cert-manager
-- ExternalDNS
-- Backend API
-- Frontend
-- PostgreSQL (CloudNativePG)
-- Prometheus + Grafana + Loki
-- Trivy Operator
+│   │   ├── vpc/               # VPC, subnets, IGW, NAT, routes
 
-### Security
-- **WAF**: OWASP Top 10, SQL injection, Known Bad Inputs, rate limiting (2000 req/5min)
-- **GuardDuty**: Threat detection — S3, Kubernetes audit logs, malware protection
-- **Security Hub**: CIS AWS Foundations Benchmark, AWS Foundational Security
-- **IRSA**: Pod-level IAM — least privilege per service account
-- **Trivy Operator**: Continuous vulnerability scanning for all container images
+│   │   ├── eks/               # EKS cluster, node groups, OIDC
 
-### Observability
-- **Prometheus**: Cluster and application metrics
-- **Grafana**: Kubernetes Cluster and Node Exporter dashboards
-- **Loki**: Centralized log aggregation
-- **AlertManager**: Alert routing and notification
+│   │   ├── irsa/              # IAM roles for service accounts
 
-## Quick Start
+│   │   ├── argocd/            # ArgoCD Helm deployment
+
+│   │   ├── secrets/           # Secrets Manager resources
+
+│   │   └── security/          # WAF, GuardDuty, Security Hub
+
+│   └── environments/
+
+│       ├── dev/
+
+│       │   ├── infra/         # AWS resources (VPC, EKS, IAM)
+
+│       │   └── platform/      # Helm/K8s resources (ArgoCD)
+
+│       ├── stage/
+
+│       └── prod/
+
+├── gitops/
+
+│   ├── apps/                  # Dev ArgoCD Application manifests
+
+│   ├── stage/apps/            # Stage ArgoCD Application manifests
+
+│   ├── prod/apps/             # Prod ArgoCD Application manifests
+
+│   └── helm-values/           # Helm chart overrides per app
+
+├── helm/
+
+│   ├── backend/               # Backend API Helm chart
+
+│   └── frontend/              # Frontend Helm chart
+
+├── apps/
+
+│   ├── backend/               # Node.js API source + Dockerfile
+
+│   ├── frontend/              # nginx dashboard + Dockerfile
+
+│   ├── postgres/              # CloudNativePG cluster manifests
+
+│   ├── secrets/               # Dev ExternalSecret manifests
+
+│   ├── secrets-stage/         # Stage ExternalSecret manifests
+
+│   └── secrets-prod/          # Prod ExternalSecret manifests
+
+├── backend/                   # Terraform backend configs
+
+│   ├── dev-infra.hcl
+
+│   ├── dev-platform.hcl
+
+│   ├── stage-infra.hcl
+
+│   └── prod-infra.hcl
+
+├── docs/                      # Architecture, ADRs, runbooks
+
+├── .github/workflows/         # CI/CD pipelines
+
+└── README.md
+
+---
+
+## Key Design Decisions
+
+### Why EKS over ECS Fargate?
+Kubernetes is requested in 75%+ of Cloud/DevOps job descriptions in Switzerland and Austria. EKS enables CKA certification, CNCF ecosystem tools, and skills that transfer to AKS/GKE. See [docs/adr/001-eks-over-ecs.md](docs/adr/001-eks-over-ecs.md).
+
+### Why ArgoCD App of Apps?
+A single `kubectl apply` deploys the entire platform. Adding a new application requires one YAML file in `gitops/apps/`. `selfHeal: true` ensures the cluster always converges to the Git state. See [docs/adr/002-app-of-apps-pattern.md](docs/adr/002-app-of-apps-pattern.md).
+
+### Why separate Terraform state per environment?
+Independent state files mean a failed prod apply cannot corrupt dev state. Each environment can be destroyed without affecting others. Remote state with S3 + DynamoDB locking prevents concurrent modifications.
+
+### Why External Secrets Operator over Kubernetes Secrets?
+Secrets in etcd are base64 encoded, not encrypted. ESO pulls secrets from AWS Secrets Manager at runtime — no secrets ever touch Git, no secrets are stored in container environment variables in plain text.
+
+---
+
+## Security Architecture
+
+This project applies **defence in depth** — 5 security layers:
+
+Layer 1 — Edge:        CloudFront + WAF (OWASP, SQLi, rate limiting)
+
+Layer 2 — Network:     VPC segmentation, NACLs, Security Groups
+
+Layer 3 — Workload:    IRSA least-privilege, Pod Security Standards
+
+Layer 4 — Data:        KMS encryption, Secrets Manager rotation
+
+Layer 5 — Detection:   GuardDuty, Security Hub CIS Benchmark, Trivy
+
+My network security background directly informed this design — Security Groups map to stateful firewall rules, NACLs to stateless ACLs, VPC routing to enterprise routing tables.
+
+---
+
+## Sprint History
+
+| Sprint | Description | Status |
+|--------|-------------|--------|
+| Sprint 1 | VPC, Subnets, NAT Gateway, Route Tables | ✅ |
+| Sprint 2 | EKS 1.33, Node Groups, OIDC Provider | ✅ |
+| Sprint 3 | IRSA — ALB Controller, cert-manager, ExternalDNS, EBS CSI | ✅ |
+| Sprint 4 | ArgoCD, GitOps App of Apps pattern | ✅ |
+| Sprint 5 | Node.js Backend, nginx Frontend, PostgreSQL 17 | ✅ |
+| Sprint 6 | Prometheus, Grafana, Loki, AlertManager | ✅ |
+| Sprint 7 | WAF, GuardDuty, Security Hub, Trivy Operator | ✅ |
+| Sprint 8 | GitHub Actions CI/CD — OIDC, Trivy gate, Helm deploy | ✅ |
+| Sprint 9 | Secrets Manager + External Secrets Operator | ✅ |
+| Sprint 10 | Stage Environment — isolated cluster, VPC, state | ✅ |
+| Sprint 11 | Production Environment — m5.xlarge, 3-AZ NAT | ✅ |
+
+---
+
+## Deployment Guide
 
 ### Prerequisites
-- AWS CLI configured
-- Terraform >= 1.7
-- kubectl
-- Helm >= 3.0
-
-### Deploy
 
 ```bash
-# 1. Bootstrap state backend
-cd terraform/bootstrap
-terraform init && terraform apply
+aws --version          # AWS CLI v2
+terraform --version    # >= 1.7.0
+kubectl version        # >= 1.28
+helm version           # >= 3.0
+```
 
-# 2. Deploy infrastructure (Phase 1 - AWS resources)
-cd ../environments/dev
-terraform init -backend-config=../../backend/dev.hcl
-terraform apply
+### Phase 1 — Infrastructure (VPC, EKS, IAM)
 
-# 3. Update kubeconfig
+```bash
+cd environments/dev/infra
+terraform init -backend-config=../../../backend/dev-infra.hcl
+terraform apply -auto-approve
+```
+
+### Phase 2 — Platform (ArgoCD)
+
+```bash
 aws eks update-kubeconfig --name platform-dev --region eu-central-1
 
-# 4. Deploy ArgoCD + platform addons (Phase 2)
-# Uncomment helm/kubernetes providers in terraform.tf
-terraform apply
+cd environments/dev/platform
+terraform init -backend-config=../../../backend/dev-platform.hcl
+terraform apply -auto-approve
+```
 
-# 5. Deploy applications via GitOps
+### Phase 3 — Applications (GitOps)
+
+```bash
 kubectl apply -f gitops/apps/root-app.yaml
+kubectl get applications -n argocd -w
 ```
 
 ### Verify
 
 ```bash
-# Check all ArgoCD applications
+# All applications healthy
 kubectl get applications -n argocd
 
-# Check all pods
-kubectl get pods -A
+# All pods running
+kubectl get pods -A | grep -v kube-system
 
-# Test backend API
-kubectl port-forward svc/backend 8080:8080 -n backend
-curl http://localhost:8080/health
+# API health check
+kubectl exec -n backend \
+  $(kubectl get pods -n backend -o name | head -1) \
+  -- wget -qO- http://localhost:8080/health
 ```
 
-## Sprints
+---
 
-| Sprint | Description | Status |
-|--------|-------------|--------|
-| Sprint 1 | VPC, Subnets, NAT, Route Tables | ✅ Done |
-| Sprint 2 | EKS Cluster, Node Groups, OIDC | ✅ Done |
-| Sprint 3 | IRSA — ALB, cert-manager, ExternalDNS | ✅ Done |
-| Sprint 4 | ArgoCD, GitOps, App of Apps | ✅ Done |
-| Sprint 5 | Frontend, Backend API, PostgreSQL | ✅ Done |
-| Sprint 6 | Prometheus, Grafana, Loki | ✅ Done |
-| Sprint 7 | WAF, GuardDuty, Security Hub, Trivy | ✅ Done |
+## Real Errors Encountered
 
-## Author
+These are production-class problems solved during development:
 
-Network Security Engineer → Cloud/DevOps Engineer transition project.
-Target: Cloud/DevOps positions in Switzerland and Austria.
+| Problem | Root Cause | Fix |
+|---------|-----------|-----|
+| `data.aws_eks_cluster` error on first apply | Helm provider reads EKS before it exists | Two-phase apply: infra first, platform second |
+| PostgreSQL PVCs stuck in Pending | EBS CSI driver had no IRSA role | Added `ebs_csi` IAM role to irsa module |
+| Nodes hitting 17-pod limit | t3.medium ENI limit with VPC CNI | Added 3rd node; prefix delegation configured |
+| kube-prometheus-stack CRD too large | 262KB annotation limit in ArgoCD | Deployed via Helm directly; Grafana via ArgoCD |
+| ArgoCD namespace stuck on destroy | Kubernetes finalizers blocking deletion | Manual finalizer removal via kubectl |
+| GitHub OIDC auth failing | `aws-auth` ConfigMap missing github-actions role | Added `kubernetes_config_map_v1_data` resource with `depends_on` |
+| Stage secrets pointing to dev path | ESO ExternalSecret had hardcoded dev path | Created environment-specific secret manifests |
 
-- 10+ years networking and network security experience
-- AWS, Terraform, Kubernetes, GitOps, DevSecOps
+---
 
+## Cost Analysis
 
+| Environment | Monthly Estimate | Key Cost Drivers |
+|-------------|-----------------|-----------------|
+| Dev (active) | ~$150 | EKS $73 + 3x t3.medium + NAT GW |
+| Stage (active) | ~$250 | EKS $73 + 2x t3.large + 2x NAT GW |
+| Prod (active) | ~$800 | EKS $73 + 3x m5.xlarge + 3x NAT GW |
+| Portfolio (intermittent) | ~$20-40/month | Apply → test → destroy workflow |
 
+**Cost optimisation applied:**
+- Destroy after each session — EBS volumes checked manually
+- Single NAT GW in dev (HA not required for testing)
+- VPC Endpoints for S3/ECR to reduce NAT data transfer
+
+---
+
+## Documentation
+
+- [Architecture Overview](docs/architecture.md)
+- [Architecture Decision Records](docs/decisions.md)
+- [Cost Analysis](docs/cost-analysis.md)
+- [Threat Model](docs/threat-model.md)
+- [Troubleshooting Guide](docs/troubleshooting.md)
+- [Lessons Learned](docs/lessons-learned.md)
+
+---
+
+## About
+
+**Background:** 10+ years in network security — BGP routing, Palo Alto NGFWs, GWLB traffic inspection, hybrid AWS/on-prem connectivity.
+
+**Goal:** Cloud/DevOps Engineer roles in Switzerland and Austria.
+
+**Key insight:** Security Groups are stateful firewall rules. NACLs are stateless ACLs. VPC routing is BGP without the BGP. The concepts were familiar — the tooling was new.
+
+---
+
+*Built with the help of real production errors, documented lessons, and a lot of `terraform destroy`.*
